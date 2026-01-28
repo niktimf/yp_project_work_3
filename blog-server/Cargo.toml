@@ -16,6 +16,7 @@ tower-http = { workspace = true }
 
 # gRPC
 tonic = { workspace = true }
+tonic-prost = { workspace = true }
 prost = { workspace = true }
 
 # Database
@@ -27,7 +28,8 @@ serde_json = { workspace = true }
 
 # Authentication
 jsonwebtoken = { workspace = true }
-bcrypt = { workspace = true }
+argon2 = { workspace = true }
+password-hash = { workspace = true }
 
 # Utilities
 uuid = { workspace = true }
@@ -39,4 +41,4 @@ tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
 
 [build-dependencies]
-tonic-build = { workspace = true }
+tonic-prost-build = { workspace = true }

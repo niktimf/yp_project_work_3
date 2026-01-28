@@ -7,6 +7,14 @@ members = [
     "blog-wasm",
 ]
 
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cognitive_complexity = "warn"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+module_inception = "allow"
+
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
@@ -15,7 +23,7 @@ license = "MIT"
 
 [workspace.dependencies]
 # Async runtime
-tokio = { version = "1.43", features = ["full"] }
+tokio = { version = "1.49", features = ["full"] }
 
 # Web framework
 axum = { version = "0.8", features = ["macros"] }
@@ -23,9 +31,11 @@ tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
 
 # gRPC
-tonic = "0.12"
-tonic-build = "0.12"
-prost = "0.13"
+tonic = "0.14"
+tonic-build = "0.14"
+tonic-prost = "0.14"
+tonic-prost-build = "0.14"
+prost = "0.14"
 
 # Database
 sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono"] }
@@ -35,11 +45,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Authentication
-jsonwebtoken = "9.3"
-bcrypt = "0.16"
+jsonwebtoken = "10.3"
+argon2 = "0.5"
+password-hash = "0.5"
+rand_core = { version = "0.9", features = ["std", "os_rng"] }
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 
 # CLI
 clap = { version = "4.5", features = ["derive"] }
@@ -52,7 +64,7 @@ js-sys = "0.3"
 gloo-net = "0.6"
 
 # Utilities
-uuid = { version = "1.11", features = ["v4", "serde"] }
+uuid = { version = "1.20", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "2.0"
 anyhow = "1.0"
