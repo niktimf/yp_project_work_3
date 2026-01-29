@@ -11,7 +11,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::application::{AuthService, BlogService};
 use crate::data::{PostgresPostRepository, PostgresUserRepository};
-use crate::infrastructure::{JwtService, create_pool, run_migrations};
+use crate::infrastructure::{Database, JwtService};
 use crate::presentation::{
     AppState, BlogGrpcService, create_router,
     proto::blog_service_server::BlogServiceServer,
@@ -38,13 +38,15 @@ async fn main() -> Result<()> {
     let jwt_secret =
         std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
 
-    // Create database pool
+    // Create database connection
     tracing::info!("Connecting to database...");
-    let pool = create_pool(&database_url).await?;
+    let database = Database::new(&database_url).await?;
 
     // Run migrations
     tracing::info!("Running migrations...");
-    run_migrations(&pool).await?;
+    database.run_migrations().await?;
+
+    let pool = database.pool().clone();
 
     // Initialize services
     let jwt_service = Arc::new(JwtService::new(&jwt_secret));
