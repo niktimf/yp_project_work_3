@@ -57,3 +57,24 @@ impl FromEnv for JwtConfig {
         }
     }
 }
+
+#[derive(Clone)]
+pub struct CorsConfig {
+    pub allowed_origins: Vec<String>,
+    pub max_age_secs: u64,
+}
+
+impl FromEnv for CorsConfig {
+    fn from_env() -> Self {
+        let origins = env_required("CORS_ALLOWED_ORIGINS")
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        Self {
+            allowed_origins: origins,
+            max_age_secs: env_or("CORS_MAX_AGE", 3600),
+        }
+    }
+}

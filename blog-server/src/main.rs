@@ -12,7 +12,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::application::{AuthService, BlogService};
 use crate::data::{PostgresPostRepository, PostgresUserRepository};
 use crate::infrastructure::{
-    Database, DatabaseConfig, FromEnv, JwtConfig, JwtService, ServerConfig,
+    CorsConfig, Database, DatabaseConfig, FromEnv, JwtConfig, JwtService,
+    ServerConfig,
 };
 use crate::presentation::{
     AppState, BlogGrpcService, proto::blog_service_server::BlogServiceServer,
@@ -90,13 +91,30 @@ async fn run_http_server(
     jwt_service: Arc<JwtService>,
 ) -> Result<()> {
     use axum::Extension;
+    use axum::http::{HeaderValue, Method};
     use std::net::SocketAddr;
-    use tower_http::cors::{Any, CorsLayer};
+    use std::time::Duration;
+    use tower_http::cors::{AllowOrigin, Any, CorsLayer};
+
+    let cors_config = CorsConfig::from_env();
+
+    let origins: Vec<HeaderValue> = cors_config
+        .allowed_origins
+        .iter()
+        .filter_map(|o| o.parse().ok())
+        .collect();
 
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_origin(AllowOrigin::list(origins))
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
+        .allow_headers(Any)
+        .max_age(Duration::from_secs(cors_config.max_age_secs));
 
     let state = AppState {
         auth_service,
@@ -130,7 +148,7 @@ async fn run_grpc_server(
     use std::net::SocketAddr;
     use tonic::transport::Server;
 
-    let addr: SocketAddr = "0.0.0.0:50051".parse()?;
+    let addr = SocketAddr::from(([0, 0, 0, 0], 50051));
     tracing::info!("gRPC server listening on {}", addr);
 
     let grpc_service =
