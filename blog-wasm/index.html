@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            display: inline-block;
+        }
+
+        #user-info {
+            float: right;
+        }
+
+        #user-info span {
+            margin-right: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        button.danger {
+            background: #e74c3c;
+        }
+
+        button.danger:hover {
+            background: #c0392b;
+        }
+
+        button.secondary {
+            background: #95a5a6;
+        }
+
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tabs button {
+            background: #ecf0f1;
+            color: #333;
+        }
+
+        .tabs button.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .post {
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+        }
+
+        .post:last-child {
+            border-bottom: none;
+        }
+
+        .post h3 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .post-meta {
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .post-content {
+            margin-bottom: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .post-actions button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c0392b;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .success {
+            background: #efe;
+            color: #27ae60;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #edit-modal .card {
+            width: 90%;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Blog</h1>
+            <div id="user-info">
+                <span id="username-display"></span>
+                <button id="logout-btn" class="hidden" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Auth Section -->
+        <div id="auth-section" class="card">
+            <div class="tabs">
+                <button id="login-tab" class="active" onclick="showTab('login')">Login</button>
+                <button id="register-tab" onclick="showTab('register')">Register</button>
+            </div>
+
+            <div id="auth-error" class="error hidden"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="register-username">Username</label>
+                    <input type="text" id="register-username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" required minlength="6">
+                </div>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+
+        <!-- Create Post Section -->
+        <div id="create-post-section" class="card hidden">
+            <h2>Create Post</h2>
+            <div id="create-error" class="error hidden"></div>
+            <div id="create-success" class="success hidden"></div>
+            <form id="create-post-form" onsubmit="handleCreatePost(event)">
+                <div class="form-group">
+                    <label for="post-title">Title</label>
+                    <input type="text" id="post-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="post-content">Content</label>
+                    <textarea id="post-content" required></textarea>
+                </div>
+                <button type="submit">Create Post</button>
+            </form>
+        </div>
+
+        <!-- Posts List -->
+        <div class="card">
+            <h2>Posts</h2>
+            <div id="posts-error" class="error hidden"></div>
+            <div id="posts-list"></div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="hidden">
+        <div class="card">
+            <h2>Edit Post</h2>
+            <div id="edit-error" class="error hidden"></div>
+            <form id="edit-post-form" onsubmit="handleUpdatePost(event)">
+                <input type="hidden" id="edit-post-id">
+                <div class="form-group">
+                    <label for="edit-title">Title</label>
+                    <input type="text" id="edit-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-content">Content</label>
+                    <textarea id="edit-content" required></textarea>
+                </div>
+                <button type="submit">Update</button>
+                <button type="button" class="secondary" onclick="closeEditModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { BlogApp } from './pkg/blog_wasm.js';
+
+        let app;
+        let currentPage = 0;
+        const pageSize = 10;
+        let currentUser = null;
+
+        window.showTab = function(tab) {
+            document.getElementById('login-tab').classList.toggle('active', tab === 'login');
+            document.getElementById('register-tab').classList.toggle('active', tab === 'register');
+            document.getElementById('login-form').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('register-form').classList.toggle('hidden', tab !== 'register');
+            document.getElementById('auth-error').classList.add('hidden');
+        };
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const result = await app.login(email, password);
+                currentUser = result.user;
+                updateUI();
+                loadPosts();
+            } catch (err) {
+                showError('auth-error', err);
+            }
+        };
+
+        window.handleRegister = async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+
+            try {
+                const result = await app.register(username, email, password);
+                currentUser = result.user;
+                updateUI();
+                loadPosts();
+            } catch (err) {
+                showError('auth-error', err);
+            }
+        };
+
+        window.logout = function() {
+            app.logout();
+            currentUser = null;
+            updateUI();
+        };
+
+        window.handleCreatePost = async function(e) {
+            e.preventDefault();
+            const title = document.getElementById('post-title').value;
+            const content = document.getElementById('post-content').value;
+
+            try {
+                await app.create_post(title, content);
+                document.getElementById('post-title').value = '';
+                document.getElementById('post-content').value = '';
+                showSuccess('create-success', 'Post created!');
+                loadPosts();
+            } catch (err) {
+                showError('create-error', err);
+            }
+        };
+
+        window.editPost = function(id, title, content) {
+            document.getElementById('edit-post-id').value = id;
+            document.getElementById('edit-title').value = title;
+            document.getElementById('edit-content').value = content;
+            document.getElementById('edit-modal').classList.remove('hidden');
+        };
+
+        window.closeEditModal = function() {
+            document.getElementById('edit-modal').classList.add('hidden');
+            document.getElementById('edit-error').classList.add('hidden');
+        };
+
+        window.handleUpdatePost = async function(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-post-id').value);
+            const title = document.getElementById('edit-title').value;
+            const content = document.getElementById('edit-content').value;
+
+            try {
+                await app.update_post(id, title, content);
+                closeEditModal();
+                loadPosts();
+            } catch (err) {
+                showError('edit-error', err);
+            }
+        };
+
+        window.deletePost = async function(id) {
+            if (!confirm('Are you sure you want to delete this post?')) return;
+
+            try {
+                await app.delete_post(id);
+                loadPosts();
+            } catch (err) {
+                showError('posts-error', err);
+            }
+        };
+
+        window.changePage = function(page) {
+            currentPage = page;
+            loadPosts();
+        };
+
+        async function loadPosts() {
+            try {
+                const result = await app.load_posts(pageSize, currentPage * pageSize);
+                renderPosts(result);
+            } catch (err) {
+                showError('posts-error', err);
+            }
+        }
+
+        function renderPosts(data) {
+            const container = document.getElementById('posts-list');
+
+            if (data.posts.length === 0) {
+                container.innerHTML = '<p>No posts yet.</p>';
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = data.posts.map(post => `
+                <div class="post">
+                    <h3>${escapeHtml(post.title)}</h3>
+                    <div class="post-meta">
+                        By ${escapeHtml(post.author_username || 'Unknown')} |
+                        ${new Date(post.created_at).toLocaleDateString()}
+                    </div>
+                    <div class="post-content">${escapeHtml(post.content)}</div>
+                    ${currentUser && currentUser.id === post.author_id ? `
+                        <div class="post-actions">
+                            <button onclick="editPost(${post.id}, '${escapeHtml(post.title)}', '${escapeHtml(post.content)}')">Edit</button>
+                            <button class="danger" onclick="deletePost(${post.id})">Delete</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            // Pagination
+            const totalPages = Math.ceil(data.total / pageSize);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let paginationHtml = '';
+            if (currentPage > 0) {
+                paginationHtml += `<button onclick="changePage(${currentPage - 1})">Previous</button>`;
+            }
+            paginationHtml += `<span>Page ${currentPage + 1} of ${totalPages}</span>`;
+            if (currentPage < totalPages - 1) {
+                paginationHtml += `<button onclick="changePage(${currentPage + 1})">Next</button>`;
+            }
+            pagination.innerHTML = paginationHtml;
+        }
+
+        function updateUI() {
+            const isAuth = app.is_authenticated();
+
+            document.getElementById('auth-section').classList.toggle('hidden', isAuth);
+            document.getElementById('create-post-section').classList.toggle('hidden', !isAuth);
+            document.getElementById('logout-btn').classList.toggle('hidden', !isAuth);
+
+            if (currentUser) {
+                document.getElementById('username-display').textContent = `Hello, ${currentUser.username}`;
+            } else {
+                document.getElementById('username-display').textContent = '';
+            }
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function main() {
+            await init();
+
+            // Initialize app with server URL
+            app = new BlogApp('http://localhost:3000');
+
+            // Check if already authenticated
+            try {
+                const user = app.get_current_user();
+                if (user) {
+                    currentUser = user;
+                }
+            } catch (e) {
+                console.log('No saved user');
+            }
+
+            updateUI();
+            loadPosts();
+        }
+
+        main();
+    </script>
+</body>
+</html>

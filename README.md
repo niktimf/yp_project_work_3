@@ -122,6 +122,40 @@ blog-cli --grpc --server "http://grpc.example.com:50051" list
 | `RATE_LIMIT_BURST` | No | 20 | Rate limit burst size |
 | `CORS_MAX_AGE` | No | 3600 | CORS preflight cache (seconds) |
 
+## WASM Frontend
+
+### Build
+
+```bash
+# Install wasm-pack if not installed
+cargo install wasm-pack
+
+# Build WASM module
+cd blog-wasm
+wasm-pack build --target web
+```
+
+### Run
+
+```bash
+# Start a local HTTP server
+cd blog-wasm
+python3 -m http.server 8080
+
+# Or use any other static file server
+npx serve .
+```
+
+Open `http://localhost:8080` in your browser.
+
+### Features
+
+- User registration and login
+- JWT token stored in localStorage
+- Create, edit, delete posts (authenticated users only)
+- View all posts (public)
+- Pagination
+
 ## Development
 
 ```bash
