@@ -13,11 +13,14 @@ use crate::domain::{
     CreatePostCommand, DomainError, LoginCommand, RegisterCommand,
     UpdatePostCommand,
 };
+use crate::infrastructure::ServerConfig;
 use crate::presentation::dto::{
     AuthResponseDto, CreatePostDto, LoginDto, PostDto, PostsListDto,
     RegisterDto, UpdatePostDto, UserDto,
 };
 use crate::presentation::middleware::AuthenticatedUser;
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
+use tower_http::trace::TraceLayer;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -178,7 +181,10 @@ pub async fn list_posts(
     State(state): State<AppState>,
     Query(query): Query<ListPostsQuery>,
 ) -> Result<impl IntoResponse, DomainError> {
-    let (posts, total) = state.blog_service.list_posts(query.limit, query.offset).await?;
+    let (posts, total) = state
+        .blog_service
+        .list_posts(query.limit, query.offset)
+        .await?;
 
     let response = PostsListDto {
         posts: posts.into_iter().map(PostDto::from).collect(),
@@ -207,18 +213,34 @@ pub async fn health_check() -> Json<HealthResponse> {
 
 // ============ Router ============
 
-pub fn create_router(state: AppState) -> Router {
-    Router::new()
-        // Health check
+pub fn router(state: AppState, config: ServerConfig) -> Router {
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(config.rate_limit_per_second)
+            .burst_size(config.rate_limit_burst)
+            .finish()
+            .expect("Failed to build rate limit config"),
+    );
+
+    let auth_routes = Router::new()
+        .route("/register", post(register))
+        .route("/login", post(login));
+
+    let posts_routes = Router::new()
+        .route("/", get(list_posts))
+        .route("/", post(create_post))
+        .route("/{id}", get(get_post))
+        .route("/{id}", put(update_post))
+        .route("/{id}", delete(delete_post));
+
+    let api_v1 = Router::new()
         .route("/health", get(health_check))
-        // Auth routes (public)
-        .route("/api/auth/register", post(register))
-        .route("/api/auth/login", post(login))
-        // Post routes
-        .route("/api/posts", get(list_posts))
-        .route("/api/posts", post(create_post))
-        .route("/api/posts/{id}", get(get_post))
-        .route("/api/posts/{id}", put(update_post))
-        .route("/api/posts/{id}", delete(delete_post))
-        .with_state(state)
+        .nest("/auth", auth_routes)
+        .nest("/posts", posts_routes)
+        .with_state(state);
+
+    Router::new()
+        .nest("/api/v1", api_v1)
+        .layer(GovernorLayer::new(governor_conf))
+        .layer(TraceLayer::new_for_http())
 }

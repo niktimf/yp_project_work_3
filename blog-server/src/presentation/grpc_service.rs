@@ -68,13 +68,19 @@ impl BlogGrpcService {
 impl From<DomainError> for Status {
     fn from(e: DomainError) -> Self {
         match &e {
-            DomainError::UserAlreadyExists => Status::already_exists(e.to_string()),
-            DomainError::InvalidCredentials => Status::unauthenticated(e.to_string()),
+            DomainError::UserAlreadyExists => {
+                Status::already_exists(e.to_string())
+            }
+            DomainError::InvalidCredentials => {
+                Status::unauthenticated(e.to_string())
+            }
             DomainError::PostNotFound | DomainError::UserNotFound => {
                 Status::not_found(e.to_string())
             }
             DomainError::Forbidden => Status::permission_denied(e.to_string()),
-            DomainError::ValidationError(_) => Status::invalid_argument(e.to_string()),
+            DomainError::ValidationError(_) => {
+                Status::invalid_argument(e.to_string())
+            }
             _ => Status::internal(e.to_string()),
         }
     }

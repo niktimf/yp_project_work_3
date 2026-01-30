@@ -39,6 +39,7 @@ anyhow = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 dotenvy = { workspace = true }
+tower_governor = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = { workspace = true }

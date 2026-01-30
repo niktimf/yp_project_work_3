@@ -11,10 +11,12 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::application::{AuthService, BlogService};
 use crate::data::{PostgresPostRepository, PostgresUserRepository};
-use crate::infrastructure::{Database, JwtService};
+use crate::infrastructure::{
+    Database, DatabaseConfig, FromEnv, JwtConfig, JwtService, ServerConfig,
+};
 use crate::presentation::{
-    AppState, BlogGrpcService, create_router,
-    proto::blog_service_server::BlogServiceServer,
+    AppState, BlogGrpcService, proto::blog_service_server::BlogServiceServer,
+    router,
 };
 
 #[tokio::main]
@@ -32,15 +34,13 @@ async fn main() -> Result<()> {
     // Load environment variables
     dotenvy::dotenv().ok();
 
-    // Get configuration from environment
-    let database_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let jwt_secret =
-        std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+    // Load configuration from environment
+    let db_config = DatabaseConfig::from_env();
+    let jwt_config = JwtConfig::from_env();
 
     // Create database connection
     tracing::info!("Connecting to database...");
-    let database = Database::new(&database_url).await?;
+    let database = Database::new(&db_config.url).await?;
 
     // Run migrations
     tracing::info!("Running migrations...");
@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
     let pool = database.pool().clone();
 
     // Initialize services
-    let jwt_service = Arc::new(JwtService::new(&jwt_secret));
+    let jwt_service = Arc::new(JwtService::new(&jwt_config.secret));
     let user_repository = Arc::new(PostgresUserRepository::new(pool.clone()));
     let post_repository = Arc::new(PostgresPostRepository::new(pool.clone()));
 
@@ -92,7 +92,6 @@ async fn run_http_server(
     use axum::Extension;
     use std::net::SocketAddr;
     use tower_http::cors::{Any, CorsLayer};
-    use tower_http::trace::TraceLayer;
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -104,16 +103,21 @@ async fn run_http_server(
         blog_service,
     };
 
-    let app = create_router(state)
+    let server_config = ServerConfig::from_env();
+
+    let app = router(state, server_config)
         .layer(Extension(jwt_service))
-        .layer(cors)
-        .layer(TraceLayer::new_for_http());
+        .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::info!("HTTP server listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }
