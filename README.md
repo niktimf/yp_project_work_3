@@ -118,9 +118,17 @@ blog-cli --grpc --server "http://grpc.example.com:50051" list
 | `DATABASE_URL` | Yes | - | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | - | JWT signing secret (min 32 chars) |
 | `CORS_ALLOWED_ORIGINS` | Yes | - | Comma-separated allowed origins |
+| `DATABASE_MAX_CONNECTIONS` | No | 5 | Max DB pool connections |
+| `JWT_TOKEN_EXPIRY_HOURS` | No | 24 | JWT token lifetime in hours |
+| `HTTP_HOST` | No | 0.0.0.0 | HTTP server bind address |
+| `HTTP_PORT` | No | 3000 | HTTP server port |
+| `GRPC_HOST` | No | 0.0.0.0 | gRPC server bind address |
+| `GRPC_PORT` | No | 50051 | gRPC server port |
 | `RATE_LIMIT_PER_SECOND` | No | 10 | Rate limit requests/second |
 | `RATE_LIMIT_BURST` | No | 20 | Rate limit burst size |
 | `CORS_MAX_AGE` | No | 3600 | CORS preflight cache (seconds) |
+| `PAGINATION_DEFAULT_LIMIT` | No | 10 | Default page size |
+| `PAGINATION_MAX_LIMIT` | No | 100 | Maximum page size |
 
 ## WASM Frontend
 

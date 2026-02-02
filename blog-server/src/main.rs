@@ -12,12 +12,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::application::{AuthService, BlogService};
 use crate::data::{PostgresPostRepository, PostgresUserRepository};
 use crate::infrastructure::{
-    CorsConfig, Database, DatabaseConfig, FromEnv, JwtConfig, JwtService,
-    ServerConfig,
+    Database, DatabaseConfig, FromEnv, JwtConfig, JwtService,
 };
 use crate::presentation::{
-    AppState, BlogGrpcService, proto::blog_service_server::BlogServiceServer,
-    router,
+    AppState, BlogGrpcService, CorsConfig, PaginationConfig, ServerConfig,
+    proto::blog_service_server::BlogServiceServer, router,
 };
 
 #[tokio::main]
@@ -38,10 +37,12 @@ async fn main() -> Result<()> {
     // Load configuration from environment
     let db_config = DatabaseConfig::from_env();
     let jwt_config = JwtConfig::from_env();
+    let server_config = ServerConfig::from_env();
+    let pagination_config = PaginationConfig::from_env();
 
     // Create database connection
     tracing::info!("Connecting to database...");
-    let database = Database::new(&db_config.url).await?;
+    let database = Database::new(&db_config).await?;
 
     // Run migrations
     tracing::info!("Running migrations...");
@@ -50,7 +51,7 @@ async fn main() -> Result<()> {
     let pool = database.pool().clone();
 
     // Initialize services
-    let jwt_service = Arc::new(JwtService::new(&jwt_config.secret));
+    let jwt_service = Arc::new(JwtService::new(&jwt_config));
     let user_repository = Arc::new(PostgresUserRepository::new(pool.clone()));
     let post_repository = Arc::new(PostgresPostRepository::new(pool.clone()));
 
@@ -63,10 +64,17 @@ async fn main() -> Result<()> {
         auth_service.clone(),
         blog_service.clone(),
         jwt_service.clone(),
+        server_config.clone(),
+        pagination_config.clone(),
     ));
 
-    let grpc_handle =
-        tokio::spawn(run_grpc_server(auth_service, blog_service, jwt_service));
+    let grpc_handle = tokio::spawn(run_grpc_server(
+        auth_service,
+        blog_service,
+        jwt_service,
+        server_config,
+        pagination_config,
+    ));
 
     // Wait for both servers
     tokio::select! {
@@ -89,6 +97,8 @@ async fn run_http_server(
     auth_service: Arc<AuthService>,
     blog_service: Arc<BlogService>,
     jwt_service: Arc<JwtService>,
+    server_config: ServerConfig,
+    pagination_config: PaginationConfig,
 ) -> Result<()> {
     use axum::Extension;
     use axum::http::{HeaderValue, Method};
@@ -119,15 +129,14 @@ async fn run_http_server(
     let state = AppState {
         auth_service,
         blog_service,
+        pagination_config,
     };
 
-    let server_config = ServerConfig::from_env();
+    let addr = server_config.http_addr();
 
     let app = router(state, server_config)
         .layer(Extension(jwt_service))
         .layer(cors);
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     tracing::info!("HTTP server listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
@@ -144,15 +153,20 @@ async fn run_grpc_server(
     auth_service: Arc<AuthService>,
     blog_service: Arc<BlogService>,
     jwt_service: Arc<JwtService>,
+    server_config: ServerConfig,
+    pagination_config: PaginationConfig,
 ) -> Result<()> {
-    use std::net::SocketAddr;
     use tonic::transport::Server;
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 50051));
+    let addr = server_config.grpc_addr();
     tracing::info!("gRPC server listening on {}", addr);
 
-    let grpc_service =
-        BlogGrpcService::new(auth_service, blog_service, jwt_service);
+    let grpc_service = BlogGrpcService::new(
+        auth_service,
+        blog_service,
+        jwt_service,
+        pagination_config,
+    );
 
     Server::builder()
         .add_service(BlogServiceServer::new(grpc_service))

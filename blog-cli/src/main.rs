@@ -170,10 +170,8 @@ async fn main() -> Result<()> {
         }
 
         Commands::Get { id } => {
-            let post = client
-                .get_post(id)
-                .await
-                .context("Failed to get post")?;
+            let post =
+                client.get_post(id).await.context("Failed to get post")?;
 
             print_post(&post);
         }

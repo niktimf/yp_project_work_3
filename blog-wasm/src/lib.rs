@@ -167,12 +167,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Registration failed".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Registration failed".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -193,7 +190,11 @@ impl BlogApp {
     }
 
     #[wasm_bindgen]
-    pub async fn login(&self, email: &str, password: &str) -> Result<JsValue, JsValue> {
+    pub async fn login(
+        &self,
+        email: &str,
+        password: &str,
+    ) -> Result<JsValue, JsValue> {
         let body = serde_json::to_string(&LoginRequest { email, password })
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
@@ -206,12 +207,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Login failed".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Login failed".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -237,7 +235,8 @@ impl BlogApp {
         limit: i64,
         offset: i64,
     ) -> Result<JsValue, JsValue> {
-        let url = format!("{}?limit={}&offset={}", self.url("/posts"), limit, offset);
+        let url =
+            format!("{}?limit={}&offset={}", self.url("/posts"), limit, offset);
 
         let response = Request::get(&url)
             .send()
@@ -245,12 +244,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Failed to load posts".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Failed to load posts".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -271,12 +267,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Post not found".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Post not found".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -312,12 +305,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Failed to create post".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Failed to create post".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -354,12 +344,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Failed to update post".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Failed to update post".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -385,12 +372,9 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response
-                .json()
-                .await
-                .unwrap_or(ApiError {
-                    error: "Failed to delete post".to_string(),
-                });
+            let error: ApiError = response.json().await.unwrap_or(ApiError {
+                error: "Failed to delete post".to_string(),
+            });
             return Err(JsValue::from_str(&error.error));
         }
 

@@ -8,6 +8,8 @@ use crate::domain::{
 };
 use crate::infrastructure::JwtService;
 
+use super::config::PaginationConfig;
+
 // Include generated protobuf code
 pub mod proto {
     tonic::include_proto!("blog");
@@ -26,6 +28,7 @@ pub struct BlogGrpcService {
     auth_service: Arc<AuthService>,
     blog_service: Arc<BlogService>,
     jwt_service: Arc<JwtService>,
+    pagination_config: PaginationConfig,
 }
 
 impl BlogGrpcService {
@@ -33,11 +36,13 @@ impl BlogGrpcService {
         auth_service: Arc<AuthService>,
         blog_service: Arc<BlogService>,
         jwt_service: Arc<JwtService>,
+        pagination_config: PaginationConfig,
     ) -> Self {
         Self {
             auth_service,
             blog_service,
             jwt_service,
+            pagination_config,
         }
     }
 
@@ -271,8 +276,10 @@ impl GrpcBlogService for BlogGrpcService {
     ) -> Result<Response<ListPostsResponse>, Status> {
         let req = request.into_inner();
 
+        let max_page_size =
+            i32::try_from(self.pagination_config.max_limit).unwrap_or(100);
         let page = req.page.max(1);
-        let page_size = req.page_size.clamp(1, 100);
+        let page_size = req.page_size.clamp(1, max_page_size);
         let offset = i64::from((page - 1) * page_size);
         let limit = i64::from(page_size);
 

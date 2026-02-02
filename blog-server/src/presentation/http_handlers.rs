@@ -8,17 +8,17 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
+use super::config::{PaginationConfig, ServerConfig};
+use super::dto::{
+    AuthResponseDto, CreatePostDto, LoginDto, PostDto, PostsListDto,
+    RegisterDto, UpdatePostDto, UserDto,
+};
+use super::middleware::AuthenticatedUser;
 use crate::application::{AuthService, BlogService};
 use crate::domain::{
     CreatePostCommand, DomainError, LoginCommand, RegisterCommand,
     UpdatePostCommand,
 };
-use crate::infrastructure::ServerConfig;
-use crate::presentation::dto::{
-    AuthResponseDto, CreatePostDto, LoginDto, PostDto, PostsListDto,
-    RegisterDto, UpdatePostDto, UserDto,
-};
-use crate::presentation::middleware::AuthenticatedUser;
 use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::trace::TraceLayer;
 
@@ -26,6 +26,7 @@ use tower_http::trace::TraceLayer;
 pub struct AppState {
     pub auth_service: Arc<AuthService>,
     pub blog_service: Arc<BlogService>,
+    pub pagination_config: PaginationConfig,
 }
 
 // Error response
@@ -161,36 +162,30 @@ pub async fn delete_post(
     Ok(StatusCode::NO_CONTENT)
 }
 
-#[derive(Deserialize)]
-#[serde(default)]
+#[derive(Deserialize, Default)]
 pub struct ListPostsQuery {
-    pub limit: i64,
-    pub offset: i64,
-}
-
-impl Default for ListPostsQuery {
-    fn default() -> Self {
-        Self {
-            limit: 10,
-            offset: 0,
-        }
-    }
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
 }
 
 pub async fn list_posts(
     State(state): State<AppState>,
     Query(query): Query<ListPostsQuery>,
 ) -> Result<impl IntoResponse, DomainError> {
-    let (posts, total) = state
-        .blog_service
-        .list_posts(query.limit, query.offset)
-        .await?;
+    let config = &state.pagination_config;
+    let limit = query
+        .limit
+        .unwrap_or(config.default_limit)
+        .clamp(1, config.max_limit);
+    let offset = query.offset.unwrap_or(0).max(0);
+
+    let (posts, total) = state.blog_service.list_posts(limit, offset).await?;
 
     let response = PostsListDto {
         posts: posts.into_iter().map(PostDto::from).collect(),
         total,
-        limit: query.limit,
-        offset: query.offset,
+        limit,
+        offset,
     };
 
     Ok((StatusCode::OK, Json(response)))

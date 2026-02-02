@@ -2,9 +2,6 @@
 /target
 */target
 
-# Cargo lock (optional for libraries, keep for binaries)
-Cargo.lock
-
 # Environment files
 .env
 .env.*

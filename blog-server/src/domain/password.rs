@@ -12,9 +12,10 @@ use argon2::{
 pub struct Password(String);
 
 impl Password {
-    // 2 * 2^20 = 2,097,152 KiB = 2 GiB
-    const ARGON2_MEMORY_KIB: u32 = 2 * 2_u32.pow(20);
-    const ARGON2_ITERATIONS: u32 = 1;
+    // OWASP recommended parameters (2023)
+    // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    const ARGON2_MEMORY_KIB: u32 = 65536; // 64 MiB
+    const ARGON2_ITERATIONS: u32 = 3;
     const ARGON2_LANES: u32 = 4;
     const ARGON2_OUTPUT_LEN: usize = 32;
 
