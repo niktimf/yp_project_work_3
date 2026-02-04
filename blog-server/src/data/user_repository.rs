@@ -8,7 +8,7 @@ pub struct PostgresUserRepository {
 }
 
 impl PostgresUserRepository {
-    pub fn new(pool: PgPool) -> Self {
+    pub const fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
@@ -19,11 +19,11 @@ impl PostgresUserRepository {
         password_hash: &Password,
     ) -> Result<User, DomainError> {
         let row = sqlx::query_as::<_, UserRow>(
-            r#"
+            r"
             INSERT INTO users (username, email, password_hash)
             VALUES ($1, $2, $3)
             RETURNING id, username, email, password_hash, created_at
-            "#,
+            ",
         )
         .bind(username)
         .bind(email)
@@ -34,16 +34,17 @@ impl PostgresUserRepository {
         Ok(row.into())
     }
 
+    #[allow(dead_code)]
     pub async fn find_by_id(
         &self,
         id: i64,
     ) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as::<_, UserRow>(
-            r#"
+            r"
             SELECT id, username, email, password_hash, created_at
             FROM users
             WHERE id = $1
-            "#,
+            ",
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -57,11 +58,11 @@ impl PostgresUserRepository {
         email: &str,
     ) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as::<_, UserRow>(
-            r#"
+            r"
             SELECT id, username, email, password_hash, created_at
             FROM users
             WHERE email = $1
-            "#,
+            ",
         )
         .bind(email)
         .fetch_optional(&self.pool)
@@ -70,16 +71,17 @@ impl PostgresUserRepository {
         Ok(row.map(Into::into))
     }
 
+    #[allow(dead_code)]
     pub async fn find_by_username(
         &self,
         username: &str,
     ) -> Result<Option<User>, DomainError> {
         let row = sqlx::query_as::<_, UserRow>(
-            r#"
+            r"
             SELECT id, username, email, password_hash, created_at
             FROM users
             WHERE username = $1
-            "#,
+            ",
         )
         .bind(username)
         .fetch_optional(&self.pool)
@@ -100,7 +102,7 @@ struct UserRow {
 
 impl From<UserRow> for User {
     fn from(row: UserRow) -> Self {
-        User::new(
+        Self::new(
             row.id,
             row.username,
             row.email,

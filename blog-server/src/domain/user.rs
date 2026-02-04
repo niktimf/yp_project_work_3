@@ -12,7 +12,7 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(
+    pub const fn new(
         id: i64,
         username: String,
         email: String,

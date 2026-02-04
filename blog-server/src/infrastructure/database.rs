@@ -37,7 +37,7 @@ impl Database {
         sqlx::migrate!("./migrations").run(&self.pool).await
     }
 
-    pub fn pool(&self) -> &PgPool {
+    pub const fn pool(&self) -> &PgPool {
         &self.pool
     }
 }

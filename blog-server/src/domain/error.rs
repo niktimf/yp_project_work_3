@@ -30,32 +30,8 @@ pub enum DomainError {
     JwtError(String),
 }
 
-impl From<sqlx::Error> for DomainError {
-    fn from(err: sqlx::Error) -> Self {
-        match &err {
-            sqlx::Error::RowNotFound => DomainError::UserNotFound,
-            sqlx::Error::Database(db_err) => {
-                if let Some(code) = db_err.code() {
-                    // PostgreSQL unique violation
-                    if code == "23505" {
-                        return DomainError::UserAlreadyExists;
-                    }
-                }
-                DomainError::DatabaseError(err.to_string())
-            }
-            _ => DomainError::DatabaseError(err.to_string()),
-        }
-    }
-}
-
 impl From<password_hash::Error> for DomainError {
     fn from(err: password_hash::Error) -> Self {
-        DomainError::PasswordHashError(err.to_string())
-    }
-}
-
-impl From<jsonwebtoken::errors::Error> for DomainError {
-    fn from(err: jsonwebtoken::errors::Error) -> Self {
-        DomainError::JwtError(err.to_string())
+        Self::PasswordHashError(err.to_string())
     }
 }

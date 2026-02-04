@@ -21,7 +21,10 @@ use crate::presentation::{
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize tracing
+    // Load environment variables first so .env values are available everywhere
+    dotenvy::dotenv().ok();
+
+    // Initialize tracing (reads RUST_LOG from env)
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
             std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
@@ -31,13 +34,11 @@ async fn main() -> Result<()> {
 
     tracing::info!("Starting blog server...");
 
-    // Load environment variables
-    dotenvy::dotenv().ok();
-
     // Load configuration from environment
     let db_config = DatabaseConfig::from_env();
     let jwt_config = JwtConfig::from_env();
     let server_config = ServerConfig::from_env();
+    let cors_config = CorsConfig::from_env();
     let pagination_config = PaginationConfig::from_env();
 
     // Create database connection
@@ -64,7 +65,8 @@ async fn main() -> Result<()> {
         auth_service.clone(),
         blog_service.clone(),
         jwt_service.clone(),
-        server_config.clone(),
+        server_config,
+        cors_config,
         pagination_config.clone(),
     ));
 
@@ -98,6 +100,7 @@ async fn run_http_server(
     blog_service: Arc<BlogService>,
     jwt_service: Arc<JwtService>,
     server_config: ServerConfig,
+    cors_config: CorsConfig,
     pagination_config: PaginationConfig,
 ) -> Result<()> {
     use axum::Extension;
@@ -105,8 +108,6 @@ async fn run_http_server(
     use std::net::SocketAddr;
     use std::time::Duration;
     use tower_http::cors::{AllowOrigin, Any, CorsLayer};
-
-    let cors_config = CorsConfig::from_env();
 
     let origins: Vec<HeaderValue> = cors_config
         .allowed_origins

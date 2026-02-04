@@ -12,6 +12,7 @@ use crate::infrastructure::JwtService;
 #[derive(Debug, Clone)]
 pub struct AuthenticatedUser {
     pub user_id: i64,
+    #[allow(dead_code)]
     pub username: String,
 }
 
@@ -66,32 +67,11 @@ where
         // Verify token
         let claims = jwt_service
             .verify_token(token)
-            .map_err(|e| AuthError(format!("Invalid token: {}", e)))?;
+            .map_err(|e| AuthError(format!("Invalid token: {e}")))?;
 
-        Ok(AuthenticatedUser {
+        Ok(Self {
             user_id: claims.user_id,
             username: claims.username,
         })
-    }
-}
-
-// Optional auth extractor - doesn't fail if no token is present
-#[derive(Debug, Clone)]
-pub struct OptionalAuthenticatedUser(pub Option<AuthenticatedUser>);
-
-impl<S> FromRequestParts<S> for OptionalAuthenticatedUser
-where
-    S: Send + Sync,
-{
-    type Rejection = std::convert::Infallible;
-
-    async fn from_request_parts(
-        parts: &mut Parts,
-        state: &S,
-    ) -> Result<Self, Self::Rejection> {
-        match AuthenticatedUser::from_request_parts(parts, state).await {
-            Ok(user) => Ok(OptionalAuthenticatedUser(Some(user))),
-            Err(_) => Ok(OptionalAuthenticatedUser(None)),
-        }
     }
 }

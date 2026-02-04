@@ -12,7 +12,7 @@ pub struct AuthService {
 }
 
 impl AuthService {
-    pub fn new(
+    pub const fn new(
         user_repository: Arc<PostgresUserRepository>,
         jwt_service: Arc<JwtService>,
     ) -> Self {

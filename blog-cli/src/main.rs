@@ -120,12 +120,15 @@ async fn main() -> Result<()> {
         .await
         .context("Failed to create client")?;
 
-    // Load saved token if exists
     if let Some(token) = load_token() {
         client.set_token(token);
     }
 
-    match cli.command {
+    run_command(&mut client, cli.command).await
+}
+
+async fn run_command(client: &mut BlogClient, command: Commands) -> Result<()> {
+    match command {
         Commands::Register {
             username,
             email,
@@ -192,7 +195,7 @@ async fn main() -> Result<()> {
                 .await
                 .context("Failed to delete post")?;
 
-            println!("Post {} deleted successfully!", id);
+            println!("Post {id} deleted successfully!");
         }
 
         Commands::List { limit, offset } => {
@@ -201,12 +204,9 @@ async fn main() -> Result<()> {
                 .await
                 .context("Failed to list posts")?;
 
-            println!(
-                "Posts ({}-{} of {}):",
-                offset + 1,
-                (offset + list.posts.len() as i64).min(list.total),
-                list.total
-            );
+            let end =
+                (offset + i64::try_from(list.posts.len())?).min(list.total);
+            println!("Posts ({}-{end} of {}):", offset + 1, list.total);
             println!("{}", "-".repeat(60));
 
             for post in &list.posts {

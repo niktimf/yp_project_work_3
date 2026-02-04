@@ -8,7 +8,7 @@ pub struct PostgresPostRepository {
 }
 
 impl PostgresPostRepository {
-    pub fn new(pool: PgPool) -> Self {
+    pub const fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
@@ -19,11 +19,11 @@ impl PostgresPostRepository {
         author_id: i64,
     ) -> Result<Post, DomainError> {
         let row = sqlx::query_as::<_, PostRow>(
-            r#"
+            r"
             INSERT INTO posts (title, content, author_id)
             VALUES ($1, $2, $3)
             RETURNING id, title, content, author_id, created_at, updated_at
-            "#,
+            ",
         )
         .bind(title)
         .bind(content)
@@ -39,12 +39,12 @@ impl PostgresPostRepository {
         id: i64,
     ) -> Result<Option<Post>, DomainError> {
         let row = sqlx::query_as::<_, PostWithAuthorRow>(
-            r#"
+            r"
             SELECT p.id, p.title, p.content, p.author_id, u.username as author_username, p.created_at, p.updated_at
             FROM posts p
             JOIN users u ON p.author_id = u.id
             WHERE p.id = $1
-            "#,
+            ",
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -63,12 +63,12 @@ impl PostgresPostRepository {
         content: &str,
     ) -> Result<Option<Post>, DomainError> {
         let row = sqlx::query_as::<_, PostRow>(
-            r#"
+            r"
             UPDATE posts
             SET title = $3, content = $4, updated_at = NOW()
             WHERE id = $1 AND author_id = $2
             RETURNING id, title, content, author_id, created_at, updated_at
-            "#,
+            ",
         )
         .bind(id)
         .bind(author_id)
@@ -103,13 +103,13 @@ impl PostgresPostRepository {
         offset: i64,
     ) -> Result<Vec<Post>, DomainError> {
         let rows = sqlx::query_as::<_, PostWithAuthorRow>(
-            r#"
+            r"
             SELECT p.id, p.title, p.content, p.author_id, u.username as author_username, p.created_at, p.updated_at
             FROM posts p
             JOIN users u ON p.author_id = u.id
             ORDER BY p.created_at DESC
             LIMIT $1 OFFSET $2
-            "#,
+            ",
         )
         .bind(limit)
         .bind(offset)
@@ -140,7 +140,7 @@ struct PostRow {
 
 impl From<PostRow> for Post {
     fn from(row: PostRow) -> Self {
-        Post::new(
+        Self::new(
             row.id,
             row.title,
             row.content,
@@ -164,7 +164,7 @@ struct PostWithAuthorRow {
 
 impl From<PostWithAuthorRow> for Post {
     fn from(row: PostWithAuthorRow) -> Self {
-        Post::new(
+        Self::new(
             row.id,
             row.title,
             row.content,

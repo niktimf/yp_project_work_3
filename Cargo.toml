@@ -14,6 +14,8 @@ cognitive_complexity = "warn"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 module_inception = "allow"
+# gloo_net types in blog-wasm are inherently not Send in single-threaded WASM
+future_not_send = "allow"
 
 [workspace.package]
 version = "0.1.0"

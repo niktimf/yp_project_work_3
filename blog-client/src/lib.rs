@@ -6,7 +6,8 @@ pub use error::BlogClientError;
 pub use grpc_client::GrpcBlogClient;
 pub use http_client::HttpBlogClient;
 
-// Generated protobuf code
+// Generated protobuf code — allow clippy lints that cannot be fixed in auto-generated tonic/prost output
+#[allow(clippy::missing_errors_doc)]
 pub mod proto {
     tonic::include_proto!("blog");
 }
@@ -60,86 +61,73 @@ pub struct PostsList {
 
 /// Unified blog client that can use either HTTP or gRPC transport
 pub struct BlogClient {
-    transport: Transport,
-    http_client: Option<HttpBlogClient>,
-    grpc_client: Option<GrpcBlogClient>,
+    inner: ClientImpl,
+}
+
+enum ClientImpl {
+    Http(HttpBlogClient),
+    Grpc(GrpcBlogClient),
 }
 
 impl BlogClient {
-    /// Create a new client with the specified transport
+    /// Create a new client with the specified transport.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the connection to the server fails.
     pub async fn new(transport: Transport) -> Result<Self, BlogClientError> {
-        match &transport {
+        let inner = match transport {
             Transport::Http(base_url) => {
-                let http_client = HttpBlogClient::new(base_url);
-                Ok(Self {
-                    transport,
-                    http_client: Some(http_client),
-                    grpc_client: None,
-                })
+                ClientImpl::Http(HttpBlogClient::new(&base_url))
             }
             Transport::Grpc(endpoint) => {
-                let grpc_client = GrpcBlogClient::new(endpoint).await?;
-                Ok(Self {
-                    transport,
-                    http_client: None,
-                    grpc_client: Some(grpc_client),
-                })
+                ClientImpl::Grpc(GrpcBlogClient::new(&endpoint).await?)
             }
-        }
+        };
+        Ok(Self { inner })
     }
 
     /// Set the JWT token for authenticated requests
     pub fn set_token(&mut self, token: String) {
-        if let Some(http) = &mut self.http_client {
-            http.set_token(token.clone());
-        }
-        if let Some(grpc) = &mut self.grpc_client {
-            grpc.set_token(token);
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.set_token(token),
+            ClientImpl::Grpc(c) => c.set_token(token),
         }
     }
 
     /// Get the current JWT token
     pub fn get_token(&self) -> Option<&str> {
-        if let Some(http) = &self.http_client {
-            return http.get_token();
+        match &self.inner {
+            ClientImpl::Http(c) => c.get_token(),
+            ClientImpl::Grpc(c) => c.get_token(),
         }
-        if let Some(grpc) = &self.grpc_client {
-            return grpc.get_token();
-        }
-        None
     }
 
     /// Clear the JWT token
     pub fn clear_token(&mut self) {
-        if let Some(http) = &mut self.http_client {
-            http.clear_token();
-        }
-        if let Some(grpc) = &mut self.grpc_client {
-            grpc.clear_token();
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.clear_token(),
+            ClientImpl::Grpc(c) => c.clear_token(),
         }
     }
 
-    /// Register a new user
+    /// Register a new user.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the registration request fails.
     pub async fn register(
         &mut self,
         username: &str,
         email: &str,
         password: &str,
     ) -> Result<AuthResponse, BlogClientError> {
-        let response = match &self.transport {
-            Transport::Http(_) => {
-                self.http_client
-                    .as_ref()
-                    .unwrap()
-                    .register(username, email, password)
-                    .await?
+        let response = match &mut self.inner {
+            ClientImpl::Http(c) => {
+                c.register(username, email, password).await?
             }
-            Transport::Grpc(_) => {
-                self.grpc_client
-                    .as_mut()
-                    .unwrap()
-                    .register(username, email, password)
-                    .await?
+            ClientImpl::Grpc(c) => {
+                c.register(username, email, password).await?
             }
         };
 
@@ -147,130 +135,98 @@ impl BlogClient {
         Ok(response)
     }
 
-    /// Login with email and password
+    /// Login with email and password.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the login request fails.
     pub async fn login(
         &mut self,
         email: &str,
         password: &str,
     ) -> Result<AuthResponse, BlogClientError> {
-        let response = match &self.transport {
-            Transport::Http(_) => {
-                self.http_client
-                    .as_ref()
-                    .unwrap()
-                    .login(email, password)
-                    .await?
-            }
-            Transport::Grpc(_) => {
-                self.grpc_client
-                    .as_mut()
-                    .unwrap()
-                    .login(email, password)
-                    .await?
-            }
+        let response = match &mut self.inner {
+            ClientImpl::Http(c) => c.login(email, password).await?,
+            ClientImpl::Grpc(c) => c.login(email, password).await?,
         };
 
         self.set_token(response.token.clone());
         Ok(response)
     }
 
-    /// Create a new post (requires authentication)
+    /// Create a new post (requires authentication).
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the request fails or authentication is missing.
     pub async fn create_post(
         &mut self,
         title: &str,
         content: &str,
     ) -> Result<Post, BlogClientError> {
-        match &self.transport {
-            Transport::Http(_) => {
-                self.http_client
-                    .as_ref()
-                    .unwrap()
-                    .create_post(title, content)
-                    .await
-            }
-            Transport::Grpc(_) => {
-                self.grpc_client
-                    .as_mut()
-                    .unwrap()
-                    .create_post(title, content)
-                    .await
-            }
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.create_post(title, content).await,
+            ClientImpl::Grpc(c) => c.create_post(title, content).await,
         }
     }
 
-    /// Get a post by ID
+    /// Get a post by ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the request fails or the post is not found.
     pub async fn get_post(&mut self, id: i64) -> Result<Post, BlogClientError> {
-        match &self.transport {
-            Transport::Http(_) => {
-                self.http_client.as_ref().unwrap().get_post(id).await
-            }
-            Transport::Grpc(_) => {
-                self.grpc_client.as_mut().unwrap().get_post(id).await
-            }
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.get_post(id).await,
+            ClientImpl::Grpc(c) => c.get_post(id).await,
         }
     }
 
-    /// Update a post (requires authentication)
+    /// Update a post (requires authentication).
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the request fails or authentication is missing.
     pub async fn update_post(
         &mut self,
         id: i64,
         title: &str,
         content: &str,
     ) -> Result<Post, BlogClientError> {
-        match &self.transport {
-            Transport::Http(_) => {
-                self.http_client
-                    .as_ref()
-                    .unwrap()
-                    .update_post(id, title, content)
-                    .await
-            }
-            Transport::Grpc(_) => {
-                self.grpc_client
-                    .as_mut()
-                    .unwrap()
-                    .update_post(id, title, content)
-                    .await
-            }
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.update_post(id, title, content).await,
+            ClientImpl::Grpc(c) => c.update_post(id, title, content).await,
         }
     }
 
-    /// Delete a post (requires authentication)
+    /// Delete a post (requires authentication).
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the request fails or authentication is missing.
     pub async fn delete_post(
         &mut self,
         id: i64,
     ) -> Result<(), BlogClientError> {
-        match &self.transport {
-            Transport::Http(_) => {
-                self.http_client.as_ref().unwrap().delete_post(id).await
-            }
-            Transport::Grpc(_) => {
-                self.grpc_client.as_mut().unwrap().delete_post(id).await
-            }
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.delete_post(id).await,
+            ClientImpl::Grpc(c) => c.delete_post(id).await,
         }
     }
 
-    /// List posts with pagination
+    /// List posts with pagination.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the request fails.
     pub async fn list_posts(
         &mut self,
         limit: i64,
         offset: i64,
     ) -> Result<PostsList, BlogClientError> {
-        match &self.transport {
-            Transport::Http(_) => {
-                self.http_client
-                    .as_ref()
-                    .unwrap()
-                    .list_posts(limit, offset)
-                    .await
-            }
-            Transport::Grpc(_) => {
-                self.grpc_client
-                    .as_mut()
-                    .unwrap()
-                    .list_posts(limit, offset)
-                    .await
-            }
+        match &mut self.inner {
+            ClientImpl::Http(c) => c.list_posts(limit, offset).await,
+            ClientImpl::Grpc(c) => c.list_posts(limit, offset).await,
         }
     }
 }

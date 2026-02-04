@@ -31,7 +31,7 @@ impl Password {
         let salt = SaltString::generate(&mut OsRng);
 
         let hash = argon2.hash_password(input.as_ref().as_bytes(), &salt)?;
-        Ok(Password(hash.to_string()))
+        Ok(Self(hash.to_string()))
     }
 
     pub fn verify(&self, password: &str) -> bool {
@@ -44,8 +44,8 @@ impl Password {
             .unwrap_or(false)
     }
 
-    pub fn from_hash(hash: String) -> Self {
-        Password(hash)
+    pub const fn from_hash(hash: String) -> Self {
+        Self(hash)
     }
 }
 

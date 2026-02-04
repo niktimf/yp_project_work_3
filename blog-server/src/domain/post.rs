@@ -12,7 +12,7 @@ pub struct Post {
 }
 
 impl Post {
-    pub fn new(
+    pub const fn new(
         id: i64,
         title: String,
         content: String,

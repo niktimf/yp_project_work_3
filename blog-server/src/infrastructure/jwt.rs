@@ -8,6 +8,12 @@ use crate::domain::DomainError;
 
 use super::config::{FromEnv, env_or, env_required};
 
+impl From<jsonwebtoken::errors::Error> for DomainError {
+    fn from(err: jsonwebtoken::errors::Error) -> Self {
+        Self::JwtError(err.to_string())
+    }
+}
+
 #[derive(Clone)]
 pub struct JwtConfig {
     pub secret: String,

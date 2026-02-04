@@ -6,8 +6,6 @@ authors.workspace = true
 license.workspace = true
 
 [dependencies]
-# Async runtime
-tokio = { workspace = true }
 
 # gRPC
 tonic = { workspace = true }
@@ -22,7 +20,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # Utilities
-uuid = { workspace = true }
 chrono = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
@@ -30,3 +27,6 @@ anyhow = { workspace = true }
 [build-dependencies]
 tonic-prost-build = { workspace = true }
 anyhow = { workspace = true }
+
+[lints]
+workspace = true

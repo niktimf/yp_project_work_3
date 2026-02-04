@@ -8,7 +8,7 @@ pub struct BlogService {
 }
 
 impl BlogService {
-    pub fn new(post_repository: Arc<PostgresPostRepository>) -> Self {
+    pub const fn new(post_repository: Arc<PostgresPostRepository>) -> Self {
         Self { post_repository }
     }
 

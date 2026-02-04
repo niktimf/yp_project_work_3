@@ -2,7 +2,7 @@ use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use crate::infrastructure::config::{FromEnv, env_or, env_required};
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct ServerConfig {
     pub http_host: IpAddr,
     pub http_port: u16,
@@ -13,18 +13,18 @@ pub struct ServerConfig {
 }
 
 impl ServerConfig {
-    pub fn http_addr(&self) -> SocketAddr {
+    pub const fn http_addr(&self) -> SocketAddr {
         SocketAddr::new(self.http_host, self.http_port)
     }
 
-    pub fn grpc_addr(&self) -> SocketAddr {
+    pub const fn grpc_addr(&self) -> SocketAddr {
         SocketAddr::new(self.grpc_host, self.grpc_port)
     }
 }
 
 impl FromEnv for ServerConfig {
     fn from_env() -> Self {
-        let default_host = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0));
+        let default_host = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
 
         Self {
             http_host: env_or("HTTP_HOST", default_host),

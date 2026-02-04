@@ -115,15 +115,20 @@ impl BlogApp {
         format!("{}/api/v1{}", self.base_url, path)
     }
 
-    fn get_token(&self) -> Option<String> {
+    fn get_token() -> Option<String> {
         get_from_storage(TOKEN_KEY)
     }
 
     #[wasm_bindgen]
     pub fn is_authenticated(&self) -> bool {
-        self.get_token().is_some()
+        Self::get_token().is_some()
     }
 
+    /// Get the current user from local storage.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if deserialization fails.
     #[wasm_bindgen]
     pub fn get_current_user(&self) -> Result<JsValue, JsValue> {
         match get_from_storage(USER_KEY) {
@@ -137,6 +142,11 @@ impl BlogApp {
         }
     }
 
+    /// Logout by clearing stored token and user data.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if local storage is unavailable.
     #[wasm_bindgen]
     pub fn logout(&self) -> Result<(), JsValue> {
         remove_from_storage(TOKEN_KEY)?;
@@ -144,6 +154,11 @@ impl BlogApp {
         Ok(())
     }
 
+    /// Register a new user.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if the request fails or the server returns an error.
     #[wasm_bindgen]
     pub async fn register(
         &self,
@@ -167,9 +182,10 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Registration failed".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Registration failed".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -189,6 +205,11 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Login with email and password.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if the request fails or credentials are invalid.
     #[wasm_bindgen]
     pub async fn login(
         &self,
@@ -207,9 +228,10 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Login failed".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Login failed".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -229,6 +251,11 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Load a paginated list of posts.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if the request fails or the server returns an error.
     #[wasm_bindgen]
     pub async fn load_posts(
         &self,
@@ -244,9 +271,10 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Failed to load posts".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Failed to load posts".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -259,17 +287,23 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Get a post by ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if the request fails or the post is not found.
     #[wasm_bindgen]
     pub async fn get_post(&self, id: i64) -> Result<JsValue, JsValue> {
-        let response = Request::get(&self.url(&format!("/posts/{}", id)))
+        let response = Request::get(&self.url(&format!("/posts/{id}")))
             .send()
             .await
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Post not found".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Post not found".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -282,14 +316,18 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Create a new post.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if not authenticated, the request fails, or the server returns an error.
     #[wasm_bindgen]
     pub async fn create_post(
         &self,
         title: &str,
         content: &str,
     ) -> Result<JsValue, JsValue> {
-        let token = self
-            .get_token()
+        let token = Self::get_token()
             .ok_or_else(|| JsValue::from_str("Not authenticated"))?;
 
         let body = serde_json::to_string(&CreatePostRequest { title, content })
@@ -297,7 +335,7 @@ impl BlogApp {
 
         let response = Request::post(&self.url("/posts"))
             .header("Content-Type", "application/json")
-            .header("Authorization", &format!("Bearer {}", token))
+            .header("Authorization", &format!("Bearer {token}"))
             .body(body)
             .map_err(|e| JsValue::from_str(&e.to_string()))?
             .send()
@@ -305,9 +343,10 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Failed to create post".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Failed to create post".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -320,6 +359,11 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Update an existing post.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if not authenticated, the request fails, or the server returns an error.
     #[wasm_bindgen]
     pub async fn update_post(
         &self,
@@ -327,16 +371,15 @@ impl BlogApp {
         title: &str,
         content: &str,
     ) -> Result<JsValue, JsValue> {
-        let token = self
-            .get_token()
+        let token = Self::get_token()
             .ok_or_else(|| JsValue::from_str("Not authenticated"))?;
 
         let body = serde_json::to_string(&UpdatePostRequest { title, content })
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
-        let response = Request::put(&self.url(&format!("/posts/{}", id)))
+        let response = Request::put(&self.url(&format!("/posts/{id}")))
             .header("Content-Type", "application/json")
-            .header("Authorization", &format!("Bearer {}", token))
+            .header("Authorization", &format!("Bearer {token}"))
             .body(body)
             .map_err(|e| JsValue::from_str(&e.to_string()))?
             .send()
@@ -344,9 +387,10 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Failed to update post".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Failed to update post".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 
@@ -359,22 +403,27 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
+    /// Delete a post by ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns `JsValue` error if not authenticated, the request fails, or the server returns an error.
     #[wasm_bindgen]
     pub async fn delete_post(&self, id: i64) -> Result<(), JsValue> {
-        let token = self
-            .get_token()
+        let token = Self::get_token()
             .ok_or_else(|| JsValue::from_str("Not authenticated"))?;
 
-        let response = Request::delete(&self.url(&format!("/posts/{}", id)))
-            .header("Authorization", &format!("Bearer {}", token))
+        let response = Request::delete(&self.url(&format!("/posts/{id}")))
+            .header("Authorization", &format!("Bearer {token}"))
             .send()
             .await
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         if !response.ok() {
-            let error: ApiError = response.json().await.unwrap_or(ApiError {
-                error: "Failed to delete post".to_string(),
-            });
+            let error: ApiError =
+                response.json().await.unwrap_or_else(|_| ApiError {
+                    error: "Failed to delete post".to_string(),
+                });
             return Err(JsValue::from_str(&error.error));
         }
 

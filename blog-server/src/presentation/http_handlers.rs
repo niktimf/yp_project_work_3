@@ -13,7 +13,7 @@ use super::dto::{
     AuthResponseDto, CreatePostDto, LoginDto, PostDto, PostsListDto,
     RegisterDto, UpdatePostDto, UserDto,
 };
-use super::middleware::AuthenticatedUser;
+use super::middleware::{AuthenticatedUser, ErrorResponse};
 use crate::application::{AuthService, BlogService};
 use crate::domain::{
     CreatePostCommand, DomainError, LoginCommand, RegisterCommand,
@@ -29,30 +29,19 @@ pub struct AppState {
     pub pagination_config: PaginationConfig,
 }
 
-// Error response
-#[derive(Serialize)]
-struct ErrorResponse {
-    error: String,
-}
-
 // Convert DomainError to HTTP response
 impl IntoResponse for DomainError {
     fn into_response(self) -> axum::response::Response {
         let (status, message) = match &self {
-            DomainError::UserNotFound => {
+            Self::UserNotFound | Self::PostNotFound => {
                 (StatusCode::NOT_FOUND, self.to_string())
             }
-            DomainError::UserAlreadyExists => {
-                (StatusCode::CONFLICT, self.to_string())
-            }
-            DomainError::InvalidCredentials => {
+            Self::UserAlreadyExists => (StatusCode::CONFLICT, self.to_string()),
+            Self::InvalidCredentials => {
                 (StatusCode::UNAUTHORIZED, self.to_string())
             }
-            DomainError::PostNotFound => {
-                (StatusCode::NOT_FOUND, self.to_string())
-            }
-            DomainError::Forbidden => (StatusCode::FORBIDDEN, self.to_string()),
-            DomainError::ValidationError(_) => {
+            Self::Forbidden => (StatusCode::FORBIDDEN, self.to_string()),
+            Self::ValidationError(_) => {
                 (StatusCode::BAD_REQUEST, self.to_string())
             }
             _ => (

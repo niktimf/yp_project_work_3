@@ -78,8 +78,10 @@ impl From<ApiAuthResponse> for AuthResponse {
                 created_at: chrono::DateTime::parse_from_rfc3339(
                     &api.user.created_at,
                 )
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
+                .map_or_else(
+                    |_| chrono::Utc::now(),
+                    |dt| dt.with_timezone(&chrono::Utc),
+                ),
             },
         }
     }
@@ -94,11 +96,15 @@ impl From<ApiPost> for Post {
             author_id: api.author_id,
             author_username: api.author_username,
             created_at: chrono::DateTime::parse_from_rfc3339(&api.created_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
+                .map_or_else(
+                    |_| chrono::Utc::now(),
+                    |dt| dt.with_timezone(&chrono::Utc),
+                ),
             updated_at: chrono::DateTime::parse_from_rfc3339(&api.updated_at)
-                .map(|dt| dt.with_timezone(&chrono::Utc))
-                .unwrap_or_else(|_| chrono::Utc::now()),
+                .map_or_else(
+                    |_| chrono::Utc::now(),
+                    |dt| dt.with_timezone(&chrono::Utc),
+                ),
         }
     }
 }
@@ -148,20 +154,23 @@ impl HttpBlogClient {
             let msg = response
                 .json::<ApiError>()
                 .await
-                .map(|e| e.error)
-                .unwrap_or_else(|_| "Unauthorized".to_string());
+                .map_or_else(|_| "Unauthorized".to_string(), |e| e.error);
             return BlogClientError::Unauthorized(msg);
         }
 
         let msg = response
             .json::<ApiError>()
             .await
-            .map(|e| e.error)
-            .unwrap_or_else(|_| format!("HTTP error: {status}"));
+            .map_or_else(|_| format!("HTTP error: {status}"), |e| e.error);
 
         BlogClientError::InvalidRequest(msg)
     }
 
+    /// Register a new user.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the HTTP request fails or the server returns an error.
     pub async fn register(
         &self,
         username: &str,
@@ -187,6 +196,11 @@ impl HttpBlogClient {
         Ok(api_response.into())
     }
 
+    /// Login with email and password.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the HTTP request fails or credentials are invalid.
     pub async fn login(
         &self,
         email: &str,
@@ -207,6 +221,11 @@ impl HttpBlogClient {
         Ok(api_response.into())
     }
 
+    /// Create a new post.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if no token is set, the HTTP request fails, or the server returns an error.
     pub async fn create_post(
         &self,
         title: &str,
@@ -230,6 +249,11 @@ impl HttpBlogClient {
         Ok(api_post.into())
     }
 
+    /// Get a post by ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the HTTP request fails or the post is not found.
     pub async fn get_post(&self, id: i64) -> Result<Post, BlogClientError> {
         let response = self
             .client
@@ -245,6 +269,11 @@ impl HttpBlogClient {
         Ok(api_post.into())
     }
 
+    /// Update an existing post.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if no token is set, the HTTP request fails, or the server returns an error.
     pub async fn update_post(
         &self,
         id: i64,
@@ -269,6 +298,11 @@ impl HttpBlogClient {
         Ok(api_post.into())
     }
 
+    /// Delete a post by ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if no token is set, the HTTP request fails, or the server returns an error.
     pub async fn delete_post(&self, id: i64) -> Result<(), BlogClientError> {
         let token = self.token.as_ref().ok_or(BlogClientError::NoToken)?;
 
@@ -286,6 +320,11 @@ impl HttpBlogClient {
         Ok(())
     }
 
+    /// List posts with pagination.
+    ///
+    /// # Errors
+    ///
+    /// Returns `BlogClientError` if the HTTP request fails or the server returns an error.
     pub async fn list_posts(
         &self,
         limit: i64,

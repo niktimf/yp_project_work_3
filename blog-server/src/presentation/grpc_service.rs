@@ -10,7 +10,15 @@ use crate::infrastructure::JwtService;
 
 use super::config::PaginationConfig;
 
-// Include generated protobuf code
+// Generated protobuf code — allow clippy lints that cannot be fixed in auto-generated tonic/prost output
+#[allow(
+    clippy::missing_errors_doc,
+    clippy::derive_partial_eq_without_eq,
+    clippy::default_trait_access,
+    clippy::missing_const_for_fn,
+    clippy::too_many_lines,
+    clippy::doc_markdown
+)]
 pub mod proto {
     tonic::include_proto!("blog");
 }
@@ -32,7 +40,7 @@ pub struct BlogGrpcService {
 }
 
 impl BlogGrpcService {
-    pub fn new(
+    pub const fn new(
         auth_service: Arc<AuthService>,
         blog_service: Arc<BlogService>,
         jwt_service: Arc<JwtService>,
@@ -74,19 +82,19 @@ impl From<DomainError> for Status {
     fn from(e: DomainError) -> Self {
         match &e {
             DomainError::UserAlreadyExists => {
-                Status::already_exists(e.to_string())
+                Self::already_exists(e.to_string())
             }
             DomainError::InvalidCredentials => {
-                Status::unauthenticated(e.to_string())
+                Self::unauthenticated(e.to_string())
             }
             DomainError::PostNotFound | DomainError::UserNotFound => {
-                Status::not_found(e.to_string())
+                Self::not_found(e.to_string())
             }
-            DomainError::Forbidden => Status::permission_denied(e.to_string()),
+            DomainError::Forbidden => Self::permission_denied(e.to_string()),
             DomainError::ValidationError(_) => {
-                Status::invalid_argument(e.to_string())
+                Self::invalid_argument(e.to_string())
             }
-            _ => Status::internal(e.to_string()),
+            _ => Self::internal(e.to_string()),
         }
     }
 }
@@ -304,7 +312,7 @@ impl GrpcBlogService for BlogGrpcService {
 
         Ok(Response::new(ListPostsResponse {
             posts: grpc_posts,
-            total_count: total as i32,
+            total_count: total,
             page,
             page_size,
         }))
