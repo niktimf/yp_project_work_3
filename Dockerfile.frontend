@@ -1,0 +1,36 @@
+# ---- Stage 1: Build WASM ----
+FROM rust:1.93-slim-bookworm AS builder
+
+RUN apt-get update && apt-get install -y curl && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+WORKDIR /app
+
+# Copy workspace manifests for dependency resolution
+COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+COPY blog-wasm/Cargo.toml blog-wasm/Cargo.toml
+
+# Dummy members so workspace resolves
+COPY blog-server/Cargo.toml blog-server/Cargo.toml
+COPY blog-client/Cargo.toml blog-client/Cargo.toml
+COPY blog-cli/Cargo.toml blog-cli/Cargo.toml
+RUN mkdir -p blog-server/src blog-client/src blog-cli/src blog-wasm/src && \
+    echo "fn main() {}" > blog-server/src/main.rs && \
+    echo "fn main() {}" > blog-cli/src/main.rs && \
+    touch blog-client/src/lib.rs && \
+    touch blog-wasm/src/lib.rs
+
+# Copy real WASM source and build
+COPY blog-wasm/src blog-wasm/src
+RUN cd blog-wasm && wasm-pack build --target web --release
+
+# ---- Stage 2: Serve with nginx ----
+FROM nginx:1.27-alpine
+
+COPY blog-wasm/index.html /usr/share/nginx/html/
+COPY --from=builder /app/blog-wasm/pkg /usr/share/nginx/html/pkg/
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
