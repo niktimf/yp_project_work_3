@@ -24,6 +24,8 @@ jobs:
           components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -38,7 +40,7 @@ jobs:
         run: cargo audit
 
       - name: Install cargo-outdated
-        uses: taiki-e/install-action@cargo-outdated
+        run: cargo install cargo-outdated
 
       - name: Check outdated dependencies
         run: cargo outdated || true
