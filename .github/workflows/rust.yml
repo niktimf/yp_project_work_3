@@ -22,32 +22,32 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      
+
       - uses: Swatinem/rust-cache@v2
-      
+
       - name: Check formatting
         run: cargo fmt --all -- --check
-      
+
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
-      
+
       - name: Install cargo-audit
-        run: cargo install cargo-audit
-      
+        uses: taiki-e/install-action@cargo-audit
+
       - name: Security audit
         run: cargo audit
-      
+
       - name: Install cargo-outdated
-        run: cargo install cargo-outdated
+        uses: taiki-e/install-action@cargo-outdated
 
       - name: Check outdated dependencies
         run: cargo outdated || true
-      
+
       - name: Install cargo-machete
-        run: cargo install cargo-machete
-      
+        uses: taiki-e/install-action@cargo-machete
+
       - name: Check unused dependencies
         run: cargo machete
-      
+
       - name: Run tests
         run: cargo test --verbose
