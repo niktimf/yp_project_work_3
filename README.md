@@ -130,6 +130,56 @@ blog-cli --grpc --server "http://grpc.example.com:50051" list
 | `PAGINATION_DEFAULT_LIMIT` | No | 10 | Default page size |
 | `PAGINATION_MAX_LIMIT` | No | 100 | Maximum page size |
 
+## Docker
+
+### Quick Start
+
+```bash
+docker compose up --build
+```
+
+Open **http://localhost:8080** in your browser.
+
+### Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `frontend` | 8080 | Nginx serving the WASM frontend |
+| `blog-server` | 3000 | HTTP API |
+| `blog-server` | 50051 | gRPC API |
+| `postgres` | 5432 | PostgreSQL database |
+
+### Configuration
+
+Secrets are stored in `.env.docker` (not committed to git):
+
+```bash
+POSTGRES_DB=blog_db
+POSTGRES_USER=blog_user
+POSTGRES_PASSWORD=blog_password
+JWT_SECRET=your-secret-key-minimum-32-characters
+```
+
+Non-secret settings are defined directly in `docker-compose.yml`.
+
+### Architecture
+
+```
+browser :8080 ──> nginx (WASM frontend)
+browser :3000 ──> blog-server (HTTP API) ──> postgres
+                  blog-server (gRPC :50051)
+```
+
+The WASM frontend makes API calls directly to `localhost:3000` from the browser. CORS is configured to allow requests from `http://localhost:8080`.
+
+### Build Details
+
+- **blog-server** — multi-stage build: `rust:1.93-slim-bookworm` (build) + `debian:bookworm-slim` (runtime)
+- **frontend** — multi-stage build: `rust:1.93-slim-bookworm` + `wasm-pack` (build) + `nginx:1.27-alpine` (serve)
+- Non-root user in the server container
+- Healthcheck on `/api/v1/health`
+- Dependency caching via separate `COPY` of `Cargo.toml`/`Cargo.lock` before source code
+
 ## WASM Frontend
 
 ### Build
