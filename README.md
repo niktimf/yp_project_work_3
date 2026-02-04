@@ -151,7 +151,7 @@ Open **http://localhost:8080** in your browser.
 
 ### Configuration
 
-Secrets are stored in `.env.docker` (not committed to git):
+Secrets are stored in `.env` (not committed to git):
 
 ```bash
 POSTGRES_DB=blog_db
@@ -165,8 +165,8 @@ Non-secret settings are defined directly in `docker-compose.yml`.
 ### Architecture
 
 ```
-browser :8080 ──> nginx (WASM frontend)
-browser :3000 ──> blog-server (HTTP API) ──> postgres
+browser :8080 --> nginx (WASM frontend)
+browser :3000 --> blog-server (HTTP API) --> postgres
                   blog-server (gRPC :50051)
 ```
 
