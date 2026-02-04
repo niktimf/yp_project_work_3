@@ -41,5 +41,8 @@ tower_governor = { workspace = true }
 [build-dependencies]
 tonic-prost-build = { workspace = true }
 
+[package.metadata.cargo-machete]
+ignored = ["prost", "tonic-prost"]
+
 [lints]
 workspace = true
