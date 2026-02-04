@@ -7,7 +7,7 @@ pub use grpc_client::GrpcBlogClient;
 pub use http_client::HttpBlogClient;
 
 // Generated protobuf code — allow clippy lints that cannot be fixed in auto-generated tonic/prost output
-#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_errors_doc, clippy::derive_partial_eq_without_eq)]
 pub mod proto {
     tonic::include_proto!("blog");
 }
