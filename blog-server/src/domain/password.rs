@@ -82,7 +82,7 @@ mod tests {
     #[test]
     fn test_password_debug_hides_hash() {
         let password = Password::hash("secret123").unwrap();
-        let debug_output = format!("{:?}", password);
+        let debug_output = format!("{password:?}");
         assert_eq!(debug_output, "Password(\"********\")");
     }
 }
