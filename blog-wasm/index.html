@@ -388,7 +388,7 @@
 
         window.handleUpdatePost = async function(e) {
             e.preventDefault();
-            const id = parseInt(document.getElementById('edit-post-id').value);
+            const id = BigInt(document.getElementById('edit-post-id').value);
             const title = document.getElementById('edit-title').value;
             const content = document.getElementById('edit-content').value;
 
@@ -405,7 +405,7 @@
             if (!confirm('Are you sure you want to delete this post?')) return;
 
             try {
-                await app.delete_post(id);
+                await app.delete_post(BigInt(id));
                 loadPosts();
             } catch (err) {
                 showError('posts-error', err);
@@ -419,7 +419,7 @@
 
         async function loadPosts() {
             try {
-                const result = await app.load_posts(pageSize, currentPage * pageSize);
+                const result = await app.load_posts(BigInt(pageSize), BigInt(currentPage * pageSize));
                 renderPosts(result);
             } catch (err) {
                 showError('posts-error', err);

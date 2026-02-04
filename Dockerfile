@@ -1,7 +1,7 @@
 # ---- Stage 1: Build ----
 FROM rust:1.93-slim-bookworm AS builder
 
-RUN apt-get update && apt-get install -y protobuf-compiler && \
+RUN apt-get update && apt-get install -y protobuf-compiler cmake g++ && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
