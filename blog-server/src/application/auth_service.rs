@@ -46,10 +46,10 @@ impl AuthService {
         &self,
         command: LoginCommand,
     ) -> Result<AuthResult, DomainError> {
-        // Find user by email
+        // Find user by username
         let user = self
             .user_repository
-            .find_by_email(&command.email)
+            .find_by_username(&command.username)
             .await?
             .ok_or(DomainError::InvalidCredentials)?;
 

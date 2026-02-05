@@ -81,7 +81,7 @@ pub async fn login(
     Json(dto): Json<LoginDto>,
 ) -> Result<impl IntoResponse, DomainError> {
     let command = LoginCommand {
-        email: dto.email,
+        username: dto.username,
         password: dto.password,
     };
 

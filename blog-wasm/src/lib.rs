@@ -49,7 +49,7 @@ struct RegisterRequest<'a> {
 
 #[derive(Debug, Serialize)]
 struct LoginRequest<'a> {
-    email: &'a str,
+    username: &'a str,
     password: &'a str,
 }
 
@@ -205,7 +205,7 @@ impl BlogApp {
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
-    /// Login with email and password.
+    /// Login with username and password.
     ///
     /// # Errors
     ///
@@ -213,10 +213,10 @@ impl BlogApp {
     #[wasm_bindgen]
     pub async fn login(
         &self,
-        email: &str,
+        username: &str,
         password: &str,
     ) -> Result<JsValue, JsValue> {
-        let body = serde_json::to_string(&LoginRequest { email, password })
+        let body = serde_json::to_string(&LoginRequest { username, password })
             .map_err(|e| JsValue::from_str(&e.to_string()))?;
 
         let response = Request::post(&self.url("/auth/login"))

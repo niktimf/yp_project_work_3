@@ -40,7 +40,7 @@ enum Commands {
     /// Login with existing credentials
     Login {
         #[arg(long)]
-        email: String,
+        username: String,
         #[arg(long)]
         password: String,
     },
@@ -66,7 +66,7 @@ enum Commands {
         #[arg(long)]
         title: String,
         #[arg(long)]
-        content: String,
+        content: Option<String>,
     },
 
     /// Delete a post
@@ -148,9 +148,9 @@ async fn run_command(client: &mut BlogClient, command: Commands) -> Result<()> {
             println!("Token saved to {}", token_path().display());
         }
 
-        Commands::Login { email, password } => {
+        Commands::Login { username, password } => {
             let response = client
-                .login(&email, &password)
+                .login(&username, &password)
                 .await
                 .context("Login failed")?;
 
@@ -180,6 +180,16 @@ async fn run_command(client: &mut BlogClient, command: Commands) -> Result<()> {
         }
 
         Commands::Update { id, title, content } => {
+            let content = if let Some(c) = content {
+                c
+            } else {
+                let existing = client
+                    .get_post(id)
+                    .await
+                    .context("Failed to fetch existing post")?;
+                existing.content
+            };
+
             let post = client
                 .update_post(id, &title, &content)
                 .await

@@ -137,7 +137,7 @@ impl GrpcBlogService for BlogGrpcService {
         let req = request.into_inner();
 
         let command = LoginCommand {
-            email: req.email,
+            username: req.username,
             password: req.password,
         };
 

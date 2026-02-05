@@ -40,7 +40,7 @@ pub struct RegisterCommand {
 /// Domain command for user login
 #[derive(Debug, Clone)]
 pub struct LoginCommand {
-    pub email: String,
+    pub username: String,
     pub password: String,
 }
 

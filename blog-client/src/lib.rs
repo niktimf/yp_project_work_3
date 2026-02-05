@@ -135,19 +135,19 @@ impl BlogClient {
         Ok(response)
     }
 
-    /// Login with email and password.
+    /// Login with username and password.
     ///
     /// # Errors
     ///
     /// Returns `BlogClientError` if the login request fails.
     pub async fn login(
         &mut self,
-        email: &str,
+        username: &str,
         password: &str,
     ) -> Result<AuthResponse, BlogClientError> {
         let response = match &mut self.inner {
-            ClientImpl::Http(c) => c.login(email, password).await?,
-            ClientImpl::Grpc(c) => c.login(email, password).await?,
+            ClientImpl::Http(c) => c.login(username, password).await?,
+            ClientImpl::Grpc(c) => c.login(username, password).await?,
         };
 
         self.set_token(response.token.clone());

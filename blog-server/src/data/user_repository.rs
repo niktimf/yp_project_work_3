@@ -53,6 +53,7 @@ impl PostgresUserRepository {
         Ok(row.map(Into::into))
     }
 
+    #[allow(dead_code)]
     pub async fn find_by_email(
         &self,
         email: &str,
@@ -71,7 +72,6 @@ impl PostgresUserRepository {
         Ok(row.map(Into::into))
     }
 
-    #[allow(dead_code)]
     pub async fn find_by_username(
         &self,
         username: &str,

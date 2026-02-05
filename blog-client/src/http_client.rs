@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +15,7 @@ struct RegisterRequest<'a> {
 
 #[derive(Debug, Serialize)]
 struct LoginRequest<'a> {
-    email: &'a str,
+    username: &'a str,
     password: &'a str,
 }
 
@@ -116,9 +118,15 @@ pub struct HttpBlogClient {
 }
 
 impl HttpBlogClient {
+    const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
     pub fn new(base_url: &str) -> Self {
+        let client = Client::builder()
+            .timeout(Self::DEFAULT_TIMEOUT)
+            .build()
+            .unwrap_or_else(|_| Client::new());
+
         Self {
-            client: Client::new(),
+            client,
             base_url: base_url.trim_end_matches('/').to_string(),
             token: None,
         }
@@ -196,20 +204,20 @@ impl HttpBlogClient {
         Ok(api_response.into())
     }
 
-    /// Login with email and password.
+    /// Login with username and password.
     ///
     /// # Errors
     ///
     /// Returns `BlogClientError` if the HTTP request fails or credentials are invalid.
     pub async fn login(
         &self,
-        email: &str,
+        username: &str,
         password: &str,
     ) -> Result<AuthResponse, BlogClientError> {
         let response = self
             .client
             .post(self.url("/auth/login"))
-            .json(&LoginRequest { email, password })
+            .json(&LoginRequest { username, password })
             .send()
             .await?;
 

@@ -14,7 +14,7 @@ pub struct RegisterDto {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct LoginDto {
-    pub email: String,
+    pub username: String,
     pub password: String,
 }
 

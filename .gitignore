@@ -2,6 +2,9 @@
 /target
 */target
 
+# SQLx offline data
+.sqlx/
+
 # Environment files
 .env
 .env.*

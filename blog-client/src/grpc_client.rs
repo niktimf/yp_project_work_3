@@ -96,18 +96,18 @@ impl GrpcBlogClient {
         })
     }
 
-    /// Login with email and password.
+    /// Login with username and password.
     ///
     /// # Errors
     ///
     /// Returns `BlogClientError` if the gRPC call fails or the response is missing user data.
     pub async fn login(
         &mut self,
-        email: &str,
+        username: &str,
         password: &str,
     ) -> Result<AuthResponse, BlogClientError> {
         let request = Request::new(LoginRequest {
-            email: email.to_string(),
+            username: username.to_string(),
             password: password.to_string(),
         });
 

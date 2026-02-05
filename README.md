@@ -47,7 +47,7 @@ cargo run -p blog-cli -- <command>
 blog-cli register --username "ivan" --email "ivan@example.com" --password "secret123"
 
 # Login
-blog-cli login --email "ivan@example.com" --password "secret123"
+blog-cli login --username "ivan" --password "secret123"
 ```
 
 Token is automatically saved to `~/.blog_token`.
