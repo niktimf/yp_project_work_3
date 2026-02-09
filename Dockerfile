@@ -1,8 +1,14 @@
 # ---- Stage 1: Build ----
 FROM rust:1.93-slim-bookworm AS builder
 
-RUN apt-get update && apt-get install -y protobuf-compiler cmake g++ && \
+RUN apt-get update && apt-get install -y cmake g++ curl unzip && \
     rm -rf /var/lib/apt/lists/*
+
+# Install modern protoc (v28.3) with optional proto3 support
+RUN curl -fsSL https://github.com/protocolbuffers/protobuf/releases/download/v28.3/protoc-28.3-linux-x86_64.zip \
+    -o /tmp/protoc.zip && \
+    unzip /tmp/protoc.zip -d /usr/local && \
+    rm /tmp/protoc.zip
 
 WORKDIR /app
 
